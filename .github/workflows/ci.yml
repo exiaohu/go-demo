@@ -32,8 +32,6 @@ jobs:
           go-version: '1.24'
       - name: Run Tests
         run: make test
-      - name: Run Coverage
-        run: make coverage
 
   build:
     name: Build

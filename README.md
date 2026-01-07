@@ -1,5 +1,9 @@
 # Go Demo Playground
 
+[![CI](https://github.com/exiaohu/go-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/exiaohu/go-demo/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/exiaohu/go-demo)](https://goreportcard.com/report/github.com/exiaohu/go-demo)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 一个使用 Go 语言开发的现代化 Web 服务示例项目，遵循 Go 社区最佳实践，集成了完整的开发、测试、构建和部署流程。
 
 本项目展示了如何构建一个生产级就绪的 Go 微服务，包含了**结构化日志**、**Prometheus 监控**、**Pprof 性能分析**、**Swagger 文档**、**Docker 容器化**以及**CLI 命令行工具**等核心功能。
@@ -33,7 +37,7 @@
 
 *   **Clean Architecture**: 清晰的代码结构，分离关注点。
 *   **RESTful API**: 示例 API 实现（加减乘除）。
-*   **SQLite Database**: 集成 GORM 和 SQLite 记录计算历史。
+*   **SQLite Database**: 集成 GORM 和 **纯 Go SQLite 驱动** (无 CGO 依赖)，轻松跨平台编译。
 *   **中间件**:
     *   Logger (Zap)
     *   Recovery
@@ -44,7 +48,8 @@
     *   CORS
 *   **配置管理**: 使用 Viper 加载配置。
 *   **Swagger 文档**: 自动生成 API 文档。
-*   **Docker 支持**: 多阶段构建，极致轻量镜像。
+*   **Docker 支持**: 基于 **Distroless** 的多阶段构建，生成极致轻量（~20MB）且安全的静态二进制镜像。
+*   **优雅关闭**: 完善的信号处理与资源释放机制，确保异步任务（如日志记录）不丢失。
 *   **Kubernetes 支持**: 完整的 Deployment 和 Service 配置。
 *   **开发工具**:
     *   Makefile (常用命令)
@@ -105,9 +110,6 @@ docker run -p 8080:8080 go-demo
 # 运行所有测试 (包含 Race Detector)
 make test
 
-# 生成代码覆盖率报告 (coverage.html)
-make coverage
-
 # 执行静态代码检查
 make lint
 
@@ -153,10 +155,12 @@ rate_limit:
 - **CLI**: [Cobra](https://github.com/spf13/cobra)
 - **配置**: [Viper](https://github.com/spf13/viper)
 - **日志**: [Zap](https://github.com/uber-go/zap)
+- **ORM**: [GORM](https://gorm.io/) + [Pure Go SQLite](https://github.com/glebarez/sqlite)
 - **测试**: [Testify](https://github.com/stretchr/testify)
 - **热重载**: [Air](https://github.com/air-verse/air)
 - **文档**: [Swag](https://github.com/swaggo/swag)
 - **Lint**: [GolangCI-Lint](https://golangci-lint.run/)
+- **Docker**: [Distroless](https://github.com/GoogleContainerTools/distroless)
 
 ## 📄 许可证
 

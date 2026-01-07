@@ -21,3 +21,9 @@ vendor/
 
 # Logs
 *.log
+
+# Air
+tmp/
+
+# Goreleaser
+dist/

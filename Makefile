@@ -11,7 +11,7 @@ GOLINT=$(GOPATH)/bin/golangci-lint
 # Binary name
 BINARY_NAME=go-demo
 BINARY_UNIX=$(BINARY_NAME)_unix
-BINARY_PATH=./cmd
+BINARY_PATH=./cmd/main.go
 
 # Build info
 GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -30,6 +30,7 @@ help:
 	@echo "  build        Build the application"
 	@echo "  run          Run the application"
 	@echo "  dev          Run the application with hot reload (Air)"
+	@echo "  release      Release the application (Snapshot)"
 	@echo "  test         Run tests"
 	@echo "  coverage     Generate coverage report"
 	@echo "  lint         Run linter"
@@ -42,38 +43,42 @@ help:
 dev:
 	$(GOPATH)/bin/air
 
+# 发布（快照模式，不推送到 GitHub）
+release:
+	$(GOPATH)/bin/goreleaser release --snapshot --clean
+
 # 编译项目
-build: 
+build:
 	$(GOBUILD) $(LDFLAGS) -v -o $(BINARY_NAME) -v $(BINARY_PATH)
 
 # 运行项目
 run:
-	$(GOCMD) run $(BINARY_PATH)/main.go server
+	$(GOCMD) run $(BINARY_PATH) server
 
 # 生成 Swagger 文档
 swagger:
 	$(GOPATH)/bin/swag init -g internal/handler/handler.go -o docs
 
 # 运行单元测试并生成代码覆盖率报告（包含竞态检测）
-test: 
+test:
 	$(GOTEST) -v -race -coverprofile=coverage.out ./internal/... ./pkg/... ./cmd/...
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated at coverage.html"
 
 # 运行代码 lint 检查
-lint: 
+lint:
 	$(GOLINT) run ./internal/... ./pkg/... ./cmd/...
 
 # 格式化代码
-fmt: 
+fmt:
 	$(GOCMD) fmt ./internal/... ./pkg/... ./cmd/... ./config/...
 
 # 检查代码中的常见问题
-vet: 
+vet:
 	$(GOVET) ./internal/... ./pkg/... ./cmd/... ./config/...
 
 # 清理编译产物和临时文件
-clean: 
+clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_UNIX)
@@ -81,11 +86,11 @@ clean:
 	rm -f coverage.html
 
 # 安装项目依赖
-install-deps: 
+install-deps:
 	$(GOGET) -v ./internal/... ./pkg/... ./cmd/... ./config/...
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/air-verse/air@latest
 
 # 交叉编译（Linux）
-build-linux: 
+build-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BINARY_UNIX) -v $(BINARY_PATH)

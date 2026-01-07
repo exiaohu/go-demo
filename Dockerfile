@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN make build-linux
+RUN make build
 
 # Final stage
 FROM alpine:latest
@@ -27,7 +27,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 # Copy binary from builder
-COPY --from=builder /app/go-demo_unix ./go-demo
+COPY --from=builder /app/go-demo ./go-demo
 COPY --from=builder /app/config/config.yaml ./config.yaml
 
 # Expose port

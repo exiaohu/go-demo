@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+.DS_Store
+vendor
+bin
+tmp
+dist
+coverage.out
+coverage.html

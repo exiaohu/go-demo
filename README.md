@@ -113,6 +113,9 @@ make fmt
 # 开发模式（热重载）
 make dev
 
+# 发布快照（本地测试）
+make release
+
 # 更新 Swagger 文档
 make swagger
 

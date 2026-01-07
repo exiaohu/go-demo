@@ -5,6 +5,7 @@ go-demo_unix
 *.exe
 *.test
 *.out
+*.db
 
 # Coverage
 coverage.txt

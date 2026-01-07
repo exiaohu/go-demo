@@ -1,16 +1,31 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
-	"github.com/exiaohu/go-demo/internal/math"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/exiaohu/go-demo/internal/service"
 	"github.com/exiaohu/go-demo/pkg/errors"
 	"github.com/exiaohu/go-demo/pkg/response"
+	"github.com/exiaohu/go-demo/pkg/util/ip"
 )
 
+type Handler struct {
+	calcService service.CalculatorService
+}
+
+func NewHandler(calcService service.CalculatorService) *Handler {
+	return &Handler{
+		calcService: calcService,
+	}
+}
+
 // HomeHandler 主页
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -19,7 +34,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // HealthCheckHandler 健康检查
-func HealthCheckHandler(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) HealthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 }
@@ -36,8 +51,8 @@ func HealthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /add [get]
-func AddHandler(w http.ResponseWriter, r *http.Request) {
-	handleMathRequest(w, r, math.Add)
+func (h *Handler) AddHandler(w http.ResponseWriter, r *http.Request) {
+	h.handleMathRequest(w, r, h.calcService.Add)
 }
 
 // SubtractHandler 减法运算
@@ -52,8 +67,8 @@ func AddHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /subtract [get]
-func SubtractHandler(w http.ResponseWriter, r *http.Request) {
-	handleMathRequest(w, r, math.Subtract)
+func (h *Handler) SubtractHandler(w http.ResponseWriter, r *http.Request) {
+	h.handleMathRequest(w, r, h.calcService.Subtract)
 }
 
 // MultiplyHandler 乘法运算
@@ -68,8 +83,8 @@ func SubtractHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /multiply [get]
-func MultiplyHandler(w http.ResponseWriter, r *http.Request) {
-	handleMathRequest(w, r, math.Multiply)
+func (h *Handler) MultiplyHandler(w http.ResponseWriter, r *http.Request) {
+	h.handleMathRequest(w, r, h.calcService.Multiply)
 }
 
 // DivideHandler 除法运算
@@ -84,12 +99,17 @@ func MultiplyHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /divide [get]
-func DivideHandler(w http.ResponseWriter, r *http.Request) {
-	handleMathRequest(w, r, math.Divide)
+func (h *Handler) DivideHandler(w http.ResponseWriter, r *http.Request) {
+	h.handleMathRequest(w, r, h.calcService.Divide)
 }
 
-func handleMathRequest(w http.ResponseWriter, r *http.Request, op func(int, int) (int, error)) {
+func (h *Handler) handleMathRequest(w http.ResponseWriter, r *http.Request, op func(context.Context, int, int, string) (int, error)) {
+	tr := otel.Tracer("handler")
+	ctx, span := tr.Start(r.Context(), "handleMathRequest")
+	defer span.End()
+
 	if r.Method != http.MethodGet {
+		span.RecordError(errors.New(errors.ErrTypeValidation, "Method not allowed"))
 		response.Error(w, r, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
@@ -97,18 +117,26 @@ func handleMathRequest(w http.ResponseWriter, r *http.Request, op func(int, int)
 	query := r.URL.Query()
 	a, err := parseIntParam(query.Get("a"))
 	if err != nil {
+		span.RecordError(err)
 		response.Error(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	b, err := parseIntParam(query.Get("b"))
 	if err != nil {
+		span.RecordError(err)
 		response.Error(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	result, err := op(a, b)
+	span.SetAttributes(
+		attribute.Int("a", a),
+		attribute.Int("b", b),
+	)
+
+	result, err := op(ctx, a, b, ip.GetClientIP(r))
 	if err != nil {
+		span.RecordError(err)
 		if errors.IsValidationError(err) {
 			response.Error(w, r, http.StatusBadRequest, err.Error())
 		} else {
@@ -117,6 +145,7 @@ func handleMathRequest(w http.ResponseWriter, r *http.Request, op func(int, int)
 		return
 	}
 
+	span.SetAttributes(attribute.Int("result", result))
 	response.Success(w, r, map[string]int{"result": result})
 }
 

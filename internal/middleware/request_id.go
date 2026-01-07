@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/exiaohu/go-demo/pkg/logger"
+	"github.com/exiaohu/go-demo/pkg/util/ip"
 )
 
 type contextKey string
@@ -70,7 +71,7 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			zap.String("path", r.URL.Path),
 			zap.Int("status", wrapped.status),
 			zap.Duration("duration", time.Since(start)),
-			zap.String("ip", r.RemoteAddr),
+			zap.String("ip", ip.GetClientIP(r)),
 			zap.String("request_id", reqID),
 			zap.String("user_agent", r.UserAgent()),
 		)

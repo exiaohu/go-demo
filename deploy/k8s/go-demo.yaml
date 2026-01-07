@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-demo
+  namespace: default
+  labels:
+    app: go-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-demo
+  template:
+    metadata:
+      labels:
+        app: go-demo
+    spec:
+      containers:
+        - name: go-demo
+          image: go-demo:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_PORT
+              value: "8080"
+            - name: APP_DEBUG
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-demo-svc
+  namespace: default
+spec:
+  selector:
+    app: go-demo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort

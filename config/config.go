@@ -15,11 +15,14 @@ type Config struct {
 	Debug   bool   `json:"debug"    yaml:"debug"`
 	// 数据库配置
 	Database struct {
-		Host     string `json:"host"     yaml:"host"`
-		Port     int    `json:"port"     yaml:"port"`
-		Name     string `json:"name"     yaml:"name"`
-		User     string `json:"user"     yaml:"user"`
-		Password string `json:"password" yaml:"password"`
+		Host         string `json:"host"           yaml:"host"`
+		Port         int    `json:"port"           yaml:"port"`
+		Name         string `json:"name"           yaml:"name"`
+		User         string `json:"user"           yaml:"user"`
+		Password     string `json:"password"       yaml:"password"`
+		MaxIdleConns int    `json:"max_idle_conns" yaml:"max_idle_conns"`
+		MaxOpenConns int    `json:"max_open_conns" yaml:"max_open_conns"`
+		MaxLifeTime  int    `json:"max_life_time"  yaml:"max_life_time"`
 	} `json:"database" yaml:"database"`
 	// 限流配置
 	RateLimit struct {
@@ -48,9 +51,12 @@ func LoadConfig(configPath string) (*Config, error) {
 	viper.SetDefault("debug", false)
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
-	viper.SetDefault("database.name", "playground_db")
+	viper.SetDefault("database.name", "playground.db")
 	viper.SetDefault("database.user", "postgres")
 	viper.SetDefault("database.password", "password")
+	viper.SetDefault("database.max_idle_conns", 10)
+	viper.SetDefault("database.max_open_conns", 100)
+	viper.SetDefault("database.max_life_time", 3600)
 
 	// 限流默认值
 	viper.SetDefault("rate_limit.enabled", true)

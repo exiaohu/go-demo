@@ -1,37 +1,31 @@
-# Build stage
+# Build the Go binary
 FROM golang:1.24-alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache make git
 
 WORKDIR /app
 
-# Copy go mod and sum files
+# Install dependencies
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN make build
+# Build
+# CGO_ENABLED=0 for static binary (required for scratch/distroless)
+# -ldflags="-s -w" to strip debug symbols and reduce size
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o server cmd/main.go
 
-# Final stage
-FROM alpine:latest
+# Create a minimal runtime image
+# Use distroless/static for smallest size and best security
+FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 
-# Install runtime dependencies (if any)
-RUN apk add --no-cache ca-certificates
-
-# Copy binary from builder
-COPY --from=builder /app/go-demo ./go-demo
-COPY --from=builder /app/config/config.yaml ./config.yaml
+COPY --from=builder /app/server .
+COPY --from=builder /app/config/config.yaml .
 
 # Expose port
 EXPOSE 8080
 
 # Run the binary
-CMD ["./go-demo", "server"]
+CMD ["./server", "server"]

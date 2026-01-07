@@ -10,6 +10,7 @@ import (
 
 	"github.com/exiaohu/go-demo/config"
 	"github.com/exiaohu/go-demo/pkg/logger"
+	"github.com/exiaohu/go-demo/pkg/util/ip"
 )
 
 // IPRateLimiter 存储每个 IP 的限流器
@@ -79,12 +80,12 @@ func RateLimit(next http.Handler) http.Handler {
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 获取 IP（这里简化处理，生产环境需考虑 X-Forwarded-For 等）
-		ip := r.RemoteAddr
+		// 获取 IP
+		clientIP := ip.GetClientIP(r)
 
-		limiter := globalLimiter.GetLimiter(ip)
+		limiter := globalLimiter.GetLimiter(clientIP)
 		if !limiter.Allow() {
-			logger.Warn("Rate limit exceeded", zap.String("ip", ip))
+			logger.Warn("Rate limit exceeded", zap.String("ip", clientIP))
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
 		}

@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/exiaohu/go-demo/pkg/logger"
+	"github.com/exiaohu/go-demo/pkg/util/ip"
 )
 
 // responseWriter 包装 http.ResponseWriter 以捕获状态码
@@ -54,7 +55,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			zap.String("path", r.URL.Path),
 			zap.Int("status", wrapped.status),
 			zap.Duration("duration", time.Since(start)),
-			zap.String("ip", r.RemoteAddr),
+			zap.String("ip", ip.GetClientIP(r)),
 			zap.String("user_agent", r.UserAgent()),
 		)
 	})

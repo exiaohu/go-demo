@@ -14,12 +14,18 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/zap"
 
 	_ "github.com/exiaohu/go-demo/docs" // swagger docs
 	"github.com/exiaohu/go-demo/internal/handler"
 	"github.com/exiaohu/go-demo/internal/middleware"
+	"github.com/exiaohu/go-demo/internal/model"
+	"github.com/exiaohu/go-demo/internal/repository"
+	"github.com/exiaohu/go-demo/internal/service"
+	"github.com/exiaohu/go-demo/pkg/database"
 	"github.com/exiaohu/go-demo/pkg/logger"
+	"github.com/exiaohu/go-demo/pkg/tracer"
 )
 
 func newServerCmd() *cobra.Command {
@@ -42,15 +48,40 @@ func runServer() {
 		_ = logger.Sync()
 	}()
 
+	// 初始化 Tracer
+	shutdownTracer, err := tracer.InitTracer(cfg.AppName)
+	if err != nil {
+		logger.Fatal("Failed to initialize tracer", zap.Error(err))
+	}
+	defer func() {
+		if err := shutdownTracer(context.Background()); err != nil {
+			logger.Error("Failed to shutdown tracer", zap.Error(err))
+		}
+	}()
+
 	logger.Info("Application starting",
 		zap.String("app_name", cfg.AppName),
 		zap.String("version", cfg.Version),
 	)
 
+	// 初始化数据库
+	if err := database.Initialize(cfg); err != nil {
+		logger.Fatal("Failed to connect to database", zap.Error(err))
+	}
+	// 自动迁移
+	if err := database.AutoMigrate(&model.CalculationHistory{}); err != nil {
+		logger.Fatal("Failed to migrate database", zap.Error(err))
+	}
+
+	// 依赖注入
+	historyRepo := repository.NewHistoryRepository(database.DB)
+	calcService := service.NewCalculatorService(historyRepo)
+	h := handler.NewHandler(calcService)
+
 	// 创建 HTTP 服务器
 	router := http.NewServeMux()
-	router.HandleFunc("/", handler.HomeHandler)
-	router.HandleFunc("/healthz", handler.HealthCheckHandler)
+	router.HandleFunc("/", h.HomeHandler)
+	router.HandleFunc("/healthz", h.HealthCheckHandler)
 	router.Handle("/metrics", promhttp.Handler())
 
 	// Pprof (Debug 模式开启)
@@ -66,10 +97,22 @@ func runServer() {
 	// Swagger 文档
 	router.Handle("/swagger/", httpSwagger.WrapHandler)
 
-	router.HandleFunc("/add", handler.AddHandler)
-	router.HandleFunc("/subtract", handler.SubtractHandler)
-	router.HandleFunc("/multiply", handler.MultiplyHandler)
-	router.HandleFunc("/divide", handler.DivideHandler)
+	// API v1 路由组
+	v1 := http.NewServeMux()
+	v1.HandleFunc("/add", h.AddHandler)
+	v1.HandleFunc("/subtract", h.SubtractHandler)
+	v1.HandleFunc("/multiply", h.MultiplyHandler)
+	v1.HandleFunc("/divide", h.DivideHandler)
+	v1.HandleFunc("/history", h.HistoryHandler)
+
+	// 注册 v1 路由，同时保留根路径以兼容旧版本（可选）
+	router.Handle("/api/v1/", http.StripPrefix("/api/v1", v1))
+	// 兼容旧路由
+	router.HandleFunc("/add", h.AddHandler)
+	router.HandleFunc("/subtract", h.SubtractHandler)
+	router.HandleFunc("/multiply", h.MultiplyHandler)
+	router.HandleFunc("/divide", h.DivideHandler)
+	router.HandleFunc("/history", h.HistoryHandler)
 
 	// 配置 CORS
 	corsHandler := cors.New(cors.Options{
@@ -81,22 +124,30 @@ func runServer() {
 	})
 
 	// 应用中间件
+	// 中间件执行顺序（从外到内）：
+	// 1. RequestID: 生成请求 ID，方便追踪
+	// 2. Logger: 记录请求日志（包括 panic 后的 500）
+	// 3. Metrics: 记录监控指标（包括 panic 后的 500）
+	// 4. Recovery: 捕获 panic，防止服务崩溃
+	// 5. RateLimit: 限流
+	// 6. Gzip: 响应压缩
 	handler := middleware.Chain(router,
-		middleware.Recovery,
+		corsHandler.Handler,
 		middleware.RequestID,
 		middleware.LoggerMiddleware,
 		middleware.Metrics,
-		middleware.RateLimit, // 1. 先限流，防止恶意请求消耗资源
-		middleware.Gzip,      // 2. 再压缩，只对允许通过的请求进行处理
+		middleware.Recovery,
+		middleware.RateLimit,
+		middleware.Gzip,
 	)
 
-	// 包装 CORS
-	finalHandler := corsHandler.Handler(handler)
+	// 包装 Tracer Middleware
+	tracedHandler := otelhttp.NewHandler(handler, "http-server")
 
 	// 启动服务器
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           finalHandler,
+		Handler:           tracedHandler,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 
@@ -119,6 +170,18 @@ func runServer() {
 
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Fatal("Server forced to shutdown", zap.Error(err))
+	}
+
+	// 等待异步任务完成
+	if err := calcService.Close(); err != nil {
+		logger.Error("Failed to close calculator service", zap.Error(err))
+	}
+
+	// 关闭数据库连接
+	if err := database.Close(); err != nil {
+		logger.Error("Failed to close database connection", zap.Error(err))
+	} else {
+		logger.Info("Database connection closed")
 	}
 
 	logger.Info("Server exited gracefully")

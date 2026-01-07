@@ -1,5 +1,51 @@
+basePath: /
+definitions:
+  model.CalculationHistory:
+    properties:
+      a:
+        type: integer
+      b:
+        type: integer
+      client_ip:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      operation:
+        type: string
+      result:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      code:
+        description: 业务状态码
+        type: integer
+      data:
+        description: 数据载荷
+      message:
+        description: 提示信息
+        type: string
+      request_id:
+        description: 请求 ID
+        type: string
+    type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for Go Demo.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Go Demo API
+  version: "1.0"
 paths:
   /add:
     get:
@@ -69,6 +115,37 @@ paths:
       summary: Divide two integers
       tags:
       - math
+  /history:
+    get:
+      consumes:
+      - application/json
+      description: get latest calculation history
+      parameters:
+      - description: Limit number of records
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: History records
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.CalculationHistory'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get calculation history
+      tags:
+      - history
   /multiply:
     get:
       consumes:

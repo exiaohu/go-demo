@@ -28,6 +28,7 @@ func (m *MockHistoryRepository) List(ctx context.Context, limit int) ([]model.Ca
 func TestCalculatorService_Add(t *testing.T) {
 	mockRepo := new(MockHistoryRepository)
 	svc := NewCalculatorService(mockRepo)
+	defer svc.Close()
 
 	// 预期 Create 会被异步调用，这里我们不强制检查异步调用是否完成
 	// 但我们可以通过 WaitGroup 或 channel 在实际代码中控制，或者在测试中简单地忽略异步错误
@@ -41,6 +42,7 @@ func TestCalculatorService_Add(t *testing.T) {
 func TestCalculatorService_Divide_Error(t *testing.T) {
 	mockRepo := new(MockHistoryRepository)
 	svc := NewCalculatorService(mockRepo)
+	defer svc.Close()
 
 	result, err := svc.Divide(context.Background(), 10, 0, "127.0.0.1")
 	assert.Error(t, err)
@@ -52,6 +54,7 @@ func TestCalculatorService_Divide_Error(t *testing.T) {
 func TestCalculatorService_GetHistory(t *testing.T) {
 	mockRepo := new(MockHistoryRepository)
 	svc := NewCalculatorService(mockRepo)
+	defer svc.Close()
 
 	expectedHistory := []model.CalculationHistory{
 		{Operation: "add", A: 1, B: 2, Result: 3},
@@ -67,6 +70,7 @@ func TestCalculatorService_GetHistory(t *testing.T) {
 func TestCalculatorService_GetHistory_Error(t *testing.T) {
 	mockRepo := new(MockHistoryRepository)
 	svc := NewCalculatorService(mockRepo)
+	defer svc.Close()
 
 	mockRepo.On("List", mock.Anything, 10).Return([]model.CalculationHistory{}, errors.New("db error"))
 

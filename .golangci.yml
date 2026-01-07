@@ -20,6 +20,10 @@ linters-settings:
           - github.com/swaggo/swag
           - go.uber.org/zap
           - golang.org/x/time
+          - gorm.io/gorm
+          - github.com/glebarez/sqlite
+          - go.opentelemetry.io/otel
+          - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
   dupl:
     threshold: 100
   errcheck:

@@ -1,0 +1,115 @@
+# This file configures golangci-lint
+
+linters-settings:
+  cyclop:
+    max-complexity: 15
+  depguard:
+    rules:
+      main:
+        files: ["$all"]
+        allow:
+          - $gostd
+          - github.com/exiaohu/go-demo
+          - github.com/stretchr/testify
+          - github.com/spf13/cobra
+          - github.com/spf13/viper
+          - github.com/google/uuid
+          - github.com/prometheus/client_golang
+          - github.com/rs/cors
+          - github.com/swaggo/http-swagger
+          - github.com/swaggo/swag
+          - go.uber.org/zap
+          - golang.org/x/time
+  dupl:
+    threshold: 100
+  errcheck:
+    check-type-assertions: true
+    exclude-functions:
+      - (net/http.ResponseWriter).Write
+      - (*encoding/json.Encoder).Encode
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/exiaohu/go-demo
+  revive:
+    confidence: 0.0
+  govet:
+    enable:
+      - shadow
+  lll:
+    line-length: 140
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - cyclop
+    - dogsled
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - grouper
+    - importas
+    - inamedparam
+    - interfacebloat
+    - ireturn
+    - lll
+    - loggercheck
+    - makezero
+    - mirror
+    - misspell
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - stylecheck
+    - tagalign
+    - testableexamples
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - zerologlint
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: false # 暂时忽略测试文件的 lint，专注于核心代码

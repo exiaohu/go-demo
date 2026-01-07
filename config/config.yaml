@@ -1,0 +1,13 @@
+# 应用程序配置
+app_name: "playground"
+version: "1.0.0"
+port: 8080
+debug: true
+
+# 数据库配置
+database:
+  host: "localhost"
+  port: 5432
+  name: "playground_db"
+  user: "postgres"
+  password: "password"

@@ -1,0 +1,23 @@
+# Binaries
+bin/
+go-demo
+go-demo_unix
+*.exe
+*.test
+*.out
+
+# Coverage
+coverage.txt
+coverage.html
+coverage.out
+
+# Vendor
+vendor/
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+*.log

@@ -1,0 +1,140 @@
+info:
+  contact: {}
+paths:
+  /add:
+    get:
+      consumes:
+      - application/json
+      description: get sum of two integers
+      parameters:
+      - description: First integer
+        in: query
+        name: a
+        required: true
+        type: integer
+      - description: Second integer
+        in: query
+        name: b
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Result
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add two integers
+      tags:
+      - math
+  /divide:
+    get:
+      consumes:
+      - application/json
+      description: get quotient of two integers
+      parameters:
+      - description: First integer
+        in: query
+        name: a
+        required: true
+        type: integer
+      - description: Second integer
+        in: query
+        name: b
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Result
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Divide two integers
+      tags:
+      - math
+  /multiply:
+    get:
+      consumes:
+      - application/json
+      description: get product of two integers
+      parameters:
+      - description: First integer
+        in: query
+        name: a
+        required: true
+        type: integer
+      - description: Second integer
+        in: query
+        name: b
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Result
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Multiply two integers
+      tags:
+      - math
+  /subtract:
+    get:
+      consumes:
+      - application/json
+      description: get difference of two integers
+      parameters:
+      - description: First integer
+        in: query
+        name: a
+        required: true
+        type: integer
+      - description: Second integer
+        in: query
+        name: b
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Result
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Subtract two integers
+      tags:
+      - math
+swagger: "2.0"

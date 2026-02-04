@@ -16,7 +16,7 @@ require (
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.40.0
 	go.opentelemetry.io/otel/sdk v1.40.0
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/time v0.14.0
 	gorm.io/gorm v1.31.1
 )
